@@ -206,14 +206,25 @@ const confirmHandler: Handler<"confirm"> = (state, action, ctx) => {
 	if (pendingNotes && pendingNotes.length > 0) {
 		answer = { ...answer, notes: pendingNotes };
 	}
+	// Merge custom free-text with checked options on multi-select tabs:
+	// instead of replacing the selections, append the custom text to them.
+	const wasCustom = answer.kind === "custom";
+	const isCustomMulti = wasCustom && ctx.questions[answer.questionIndex]?.multiSelect === true;
+	if (isCustomMulti && state.multiSelectChecked.size > 0) {
+		const q = ctx.questions[answer.questionIndex];
+		const selected: string[] = [];
+		for (let i = 0; i < q.options.length; i++) {
+			if (state.multiSelectChecked.has(i)) selected.push(q.options[i]!.label);
+		}
+		if (typeof answer.answer === "string" && answer.answer.length > 0) {
+			selected.push(answer.answer);
+		}
+		answer = { ...answer, kind: "multi", answer: null, selected };
+	}
 	const answers = new Map(state.answers);
 	answers.set(answer.questionIndex, answer);
-	// Custom free-text on a multi-select tab is mutually exclusive with checkbox selections:
-	// clear the checked set immediately so [✔] glyphs vanish on Enter. (A custom answer
-	// carries no `selected` array, so syncMultiSelectFromAnswers keeps it empty on tab-back.)
-	const isCustomMulti = answer.kind === "custom" && ctx.questions[answer.questionIndex]?.multiSelect === true;
 	const customDraftsByTab =
-		answer.kind === "custom" ? withoutCustomDraft(state, answer.questionIndex) : state.customDraftsByTab;
+		wasCustom ? withoutCustomDraft(state, answer.questionIndex) : state.customDraftsByTab;
 	const next: QuestionnaireState = {
 		...state,
 		answers,
