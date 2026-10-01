@@ -312,20 +312,21 @@ export function registerAskUserQuestionTool(pi: ExtensionAPI): void {
 
 		renderCall(args, _theme, _context) {
 			const questions = (args as QuestionParams).questions ?? [];
-			const B = "\x1b[1m", R = "\x1b[22m"; // bold + reset-intensity-only (don't kill bg color)
-			if (questions.length === 1) return new Text(`${B}Q: ${questions[0].question}${R}`, 0, 0);
-			return new Text(questions.map((q, i) => `${B}Q${i + 1}: ${q.question}${R}`).join("\n"), 0, 0);
+			const qp = (s: string) => _theme.fg("accent", _theme.bold(s));
+			if (questions.length === 1) return new Text(`${qp("Q:")} ${questions[0].question}`, 0, 0);
+			return new Text(questions.map((q, i) => `${qp(`Q${i + 1}:`)} ${q.question}`).join("\n"), 0, 0);
 		},
 
 		renderResult(result, _options, _theme, _context) {
 			const details = result.details as QuestionnaireResult | undefined;
-			if (!details || details.cancelled || !details.answers?.length) return new Text("\x1b[2m✗ 已取消\x1b[0m", 0, 0);
+			if (!details || details.cancelled || !details.answers?.length) return new Text(_theme.fg("muted", "✗ 已取消"), 0, 0);
+			const ap = _theme.fg("muted", "A:");
 			const lines = details.answers.map((a) => {
 				if (a.kind === "multi" && a.selected?.length) {
 					const items = a.selected.map((s, i) => `${i + 1}. ${s}`);
-					return `A: ${items.join("\n   ")}`;
+					return `${ap} ${items.join("\n   ")}`;
 				}
-				return `A: ${a.answer ?? ""}`;
+				return `${ap} ${a.answer ?? ""}`;
 			});
 			return new Text(lines.join("\n"), 0, 0);
 		},
