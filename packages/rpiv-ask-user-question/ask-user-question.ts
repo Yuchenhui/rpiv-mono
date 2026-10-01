@@ -312,7 +312,7 @@ export function registerAskUserQuestionTool(pi: ExtensionAPI): void {
 
 		renderCall(args, _theme, _context) {
 			const questions = (args as QuestionParams).questions ?? [];
-			const B = "\x1b[1m", R = "\x1b[0m"; // bold + reset
+			const B = "\x1b[1m", R = "\x1b[22m"; // bold + reset-intensity-only (don't kill bg color)
 			if (questions.length === 1) return new Text(`${B}Q: ${questions[0].question}${R}`, 0, 0);
 			return new Text(questions.map((q, i) => `${B}Q${i + 1}: ${q.question}${R}`).join("\n"), 0, 0);
 		},
