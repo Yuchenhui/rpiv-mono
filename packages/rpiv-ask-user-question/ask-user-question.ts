@@ -312,18 +312,19 @@ export function registerAskUserQuestionTool(pi: ExtensionAPI): void {
 
 		renderCall(args, _theme, _context) {
 			const questions = (args as QuestionParams).questions ?? [];
-			if (questions.length === 1) return new Text(`❓ ${questions[0].question}`, 0, 0);
-			return new Text(questions.map((q, i) => `❓ Q${i + 1}: ${q.question}`).join("\n"), 0, 0);
+			const B = "\x1b[1m", R = "\x1b[0m"; // bold + reset
+			if (questions.length === 1) return new Text(`${B}❓ ${questions[0].question}${R}`, 0, 0);
+			return new Text(questions.map((q, i) => `${B}❓ Q${i + 1}: ${q.question}${R}`).join("\n"), 0, 0);
 		},
 
 		renderResult(result, _options, _theme, _context) {
 			const details = result.details as QuestionnaireResult | undefined;
-			if (!details || details.cancelled || !details.answers?.length) return new Text("✗ 已取消", 0, 0);
+			if (!details || details.cancelled || !details.answers?.length) return new Text("\x1b[2m✗ 已取消\x1b[0m", 0, 0);
 			const lines = details.answers.map((a) => {
 				if (a.kind === "multi" && a.selected?.length) {
-					return `→ ${a.selected.map((s, i) => `${i + 1}. ${s}`).join("; ")}`;
+					return ` → ${a.selected.map((s, i) => `${i + 1}. ${s}`).join("; ")}`;
 				}
-				return `→ ${a.answer ?? ""}`;
+				return ` → ${a.answer ?? ""}`;
 			});
 			return new Text(lines.join("\n"), 0, 0);
 		},
