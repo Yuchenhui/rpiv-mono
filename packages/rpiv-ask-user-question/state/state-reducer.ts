@@ -232,6 +232,12 @@ const confirmHandler: Handler<"confirm"> = (state, action, ctx) => {
 		...(isCustomMulti ? { multiSelectChecked: new Set<number>() } : {}),
 	};
 	if (action.autoAdvanceTab !== undefined) return switchTabResult(next, action.autoAdvanceTab, ctx);
+	// Single-question custom answer: navigate to Submit instead of finishing,
+	// so the user can review the answer before committing.
+	if (wasCustom && ctx.itemsByTab.length === 1 && answer.answer) {
+		const submitIndex = ctx.itemsByTab[0].length - 1;
+		return { state: { ...next, optionIndex: submitIndex, inputMode: false }, effects: [] };
+	}
 	return doneFor(next, ctx, false);
 };
 
