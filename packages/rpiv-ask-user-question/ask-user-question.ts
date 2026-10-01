@@ -322,7 +322,8 @@ export function registerAskUserQuestionTool(pi: ExtensionAPI): void {
 			if (!details || details.cancelled || !details.answers?.length) return new Text("\x1b[2m✗ 已取消\x1b[0m", 0, 0);
 			const lines = details.answers.map((a) => {
 				if (a.kind === "multi" && a.selected?.length) {
-					return `A: ${a.selected.map((s, i) => `${i + 1}. ${s}`).join("; ")}`;
+					const items = a.selected.map((s, i) => `${i + 1}. ${s}`);
+					return `A: ${items.join("\n   ")}`;
 				}
 				return `A: ${a.answer ?? ""}`;
 			});
