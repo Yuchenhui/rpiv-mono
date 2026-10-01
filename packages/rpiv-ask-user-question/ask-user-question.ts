@@ -1,5 +1,5 @@
 import type { ExtensionAPI, ExtensionContext, Theme } from "@earendil-works/pi-coding-agent";
-import { isKeyRelease, isKeyRepeat, matchesKey, type OverlayHandle, type TUI } from "@earendil-works/pi-tui";
+import { isKeyRelease, isKeyRepeat, matchesKey, Text, type OverlayHandle, type TUI } from "@earendil-works/pi-tui";
 import {
 	COLLAPSE_KEY_OFF,
 	formatKeySpecForDisplay,
@@ -309,6 +309,24 @@ export function registerAskUserQuestionTool(pi: ExtensionAPI): void {
 		promptSnippet: guidance.promptSnippet ?? DEFAULT_PROMPT_SNIPPET,
 		promptGuidelines: guidance.promptGuidelines ?? DEFAULT_PROMPT_GUIDELINES,
 		parameters: QuestionParamsSchema,
+
+		renderCall(args, _theme, _context) {
+			const questions = (args as QuestionParams).questions ?? [];
+			if (questions.length === 1) return new Text(`❓ ${questions[0].question}`, 0, 0);
+			return new Text(questions.map((q, i) => `❓ Q${i + 1}: ${q.question}`).join("\n"), 0, 0);
+		},
+
+		renderResult(result, _options, _theme, _context) {
+			const details = result.details as QuestionnaireResult | undefined;
+			if (!details || details.cancelled || !details.answers?.length) return new Text("✗ 已取消", 0, 0);
+			const lines = details.answers.map((a) => {
+				if (a.kind === "multi" && a.selected?.length) {
+					return `→ ${a.selected.map((s, i) => `${i + 1}. ${s}`).join("; ")}`;
+				}
+				return `→ ${a.answer ?? ""}`;
+			});
+			return new Text(lines.join("\n"), 0, 0);
+		},
 
 		async execute(_toolCallId, params, _signal, _onUpdate, ctx) {
 			// Line-terminator normalization runs once here, ahead of validation, so
