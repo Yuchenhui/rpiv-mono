@@ -149,12 +149,42 @@ export class QuestionnaireSession {
 
 	dispatch(data: string): void {
 		if (this.inputEditorOpen) return;
+		if (this.forwardScrollInput(data)) return;
 		const action = routeKey(data, this.state, this.runtime());
 		if (action.kind === "ignore") {
 			this.handleIgnoreInline(data);
 			return;
 		}
 		this.commit(action);
+	}
+
+	/**
+	 * Forward scroll input (PageUp/PageDown/SGR wheel) to the TUI viewport so the
+	 * user can scroll the transcript while the dialog is open. pi-tui drops these
+	 * when a focused overlay doesn't consume them (shouldDeferViewportInputToOverlay),
+	 * so we handle them here instead.
+	 *
+	 * See https://github.com/juicesharp/rpiv-mono/issues/253
+	 */
+	private forwardScrollInput(data: string): boolean {
+		const tui = this.tui as Record<string, unknown>;
+		if (typeof tui.scrollBy !== "function") return false;
+
+		// SGR wheel: \x1b[<64;x;yM (up) / \x1b[<65;x;yM (down)
+		const wheel = data.match(/^\x1b\[<(64|65);\d+;\d+M$/);
+		if (wheel) {
+			(tui.scrollBy as (n: number) => void)(wheel[1] === "64" ? -3 : 3);
+			return true;
+		}
+
+		// PageUp / PageDown — but NOT when inline editor is active (they move cursor there)
+		if (!this.state.inputMode) {
+			const pageSize = 20; // reasonable default; exact viewport height not exposed via TUI interface
+			if (data === "\x1b[5~") { (tui.scrollBy as (n: number) => void)(-pageSize); return true; }
+			if (data === "\x1b[6~") { (tui.scrollBy as (n: number) => void)(pageSize); return true; }
+		}
+
+		return false;
 	}
 
 	private commit(action: QuestionnaireAction): void {
