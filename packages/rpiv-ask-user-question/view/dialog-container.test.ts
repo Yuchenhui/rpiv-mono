@@ -560,36 +560,26 @@ describe("makeDialog — Submit tab", () => {
 				},
 			],
 		],
-	])("submit + question tab heights stay equal across fixtures: %s", (_label, qs) => {
+	])("question tab height ignores the global body height (no cross-tab padding): %s", (_label, qs) => {
 		const questions = qs ?? undefined;
-		const submitS = submitState();
-		const submitDlg = makeDialog(
-			makeConfig({
-				questions,
-				state: submitS,
-				submitPicker: makePicker(submitS),
-				getBodyHeight: () => 6,
-			}),
-		).render(120);
-		const questionDlg = makeDialog(
-			makeConfig({
-				questions,
-				state: submitState({ currentTab: 0 }),
-				getBodyHeight: () => 6,
-			}),
-		).render(120);
-		expect(submitDlg.length).toBe(questionDlg.length);
+		const heightAt = (globalBodyHeight: number) =>
+			makeDialog(
+				makeConfig({ questions, state: submitState({ currentTab: 0 }), getBodyHeight: () => globalBodyHeight }),
+			).render(120).length;
+		expect(heightAt(6)).toBe(heightAt(40));
 	});
 
-	it("total dialog height equals a question tab's height (no collapse / no jump)", () => {
+	it("submit tab height also ignores the global body height (renders at its own height)", () => {
 		const submitS = submitState();
-		const submit = makeDialog(
-			makeConfig({ state: submitS, submitPicker: makePicker(submitS), getBodyHeight: () => 6 }),
-		).render(120);
-		const questionTab = makeDialog(
-			makeConfig({ state: submitState({ currentTab: 0 }), getBodyHeight: () => 6 }),
-		).render(120);
-		expect(submit.length).toBe(questionTab.length);
+		const heightAt = (globalBodyHeight: number) =>
+			makeDialog(
+				makeConfig({
+					state: submitS,
+					submitPicker: makePicker(submitS),
+					getBodyHeight: () => globalBodyHeight,
+				}),
+			).render(120).length;
+		expect(heightAt(6)).toBe(heightAt(40));
 	});
 });
 
@@ -633,27 +623,25 @@ describe("makeDialog — width safety", () => {
 	});
 });
 
-describe("makeDialog — body residual padding", () => {
-	it("dialog total grows by (getBodyHeight delta) when getCurrentBodyHeight stays constant", () => {
-		// Use a tall terminal so the no-overflow path is exercised (where residual padding applies).
+describe("makeDialog — no cross-tab padding", () => {
+	it("dialog total ignores the global body height (short tabs are not padded to the tallest)", () => {
+		// The dock sizes to the dialog's own content; padding a short tab up to the tallest
+		// one stole transcript rows (2026-10-03). A taller `getBodyHeight` must not grow it.
 		const tall = { getTerminalRows: () => 200 } as const;
 		const a = makeDialog(makeConfig({ ...tall, getBodyHeight: () => 5, getCurrentBodyHeight: () => 1 })).render(80);
 		const b = makeDialog(makeConfig({ ...tall, getBodyHeight: () => 20, getCurrentBodyHeight: () => 1 })).render(80);
-		expect(b.length - a.length).toBe(15);
+		expect(b.length - a.length).toBe(0);
 	});
 
-	it("residual rows live AFTER the controls hint (very bottom of the dialog)", () => {
-		// Residual = (getBodyHeight + maxFooterRowCount) - (currentBodyHeight + footerRowCount)
-		//          = (6 + 5) - (1 + 2) = 8  (footerRowCount dropped 4→2 after chat-row removal)
+	it("no blank filler tail after the controls hint", () => {
 		const lines = makeDialog(makeConfig({ getBodyHeight: () => 6, getCurrentBodyHeight: () => 1 })).render(80);
 		const hintIdx = lines.findIndex((l) => l.includes(HINT_PART_ENTER));
 		expect(hintIdx).toBeGreaterThan(0);
-		const tail = lines.slice(hintIdx + 1);
-		expect(tail.length).toBe(8);
-		expect(tail.every((l) => l.trim() === "")).toBe(true);
+		// Only the bottom border may follow the hint row.
+		expect(lines.slice(hintIdx + 1).filter((l) => l.trim() === "").length).toBe(0);
 	});
 
-	it("dialog total line count is identical across tab switches with mixed single/multi fixture", () => {
+	it("tab switches resize the dialog instead of holding one fixed height (mixed single/multi)", () => {
 		// Render at width 120 so the full hint (all HINT_PART_* incl. toggle) doesn't wrap on either tab.
 		const multiQ: QuestionData = {
 			question: "areas?",
@@ -697,15 +685,14 @@ describe("makeDialog — body residual padding", () => {
 
 		// The "Type something." row on multi-select tabs adds (+1 to MultiSelectView
 		// height), pushing this 5-option multi tab's body from 11 → 12 and the full dialog past
-		// the prior 24-row default into the overflow regime (which disables the residual spacer
-		// that equalizes cross-tab height). Give the dialog enough rows that both tabs render
-		// without overflow so the residual spacer stays active and the heights match.
+		// Enough rows that neither tab overflows, so the comparison is the plain
+		// per-tab-height path rather than the terminal-fit partition.
 		const dlgTab0 = makeDialog(
 			makeConfig({ questions, state: stateTab0, multiSelectByTab, getBodyHeight, getTerminalRows: () => 32 }),
 		);
 		const dlgTab1 = makeDialog(
 			makeConfig({ questions, state: stateTab1, multiSelectByTab, getBodyHeight, getTerminalRows: () => 32 }),
 		);
-		expect(dlgTab0.render(120).length).toBe(dlgTab1.render(120).length);
+		expect(dlgTab1.render(120).length).toBeGreaterThan(dlgTab0.render(120).length);
 	});
 });

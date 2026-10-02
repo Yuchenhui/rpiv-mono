@@ -194,6 +194,48 @@ describe("ask_user_question — factory driver (real pi-tui keybindings)", () =>
 	});
 });
 
+const CTRL_RBRACKET = "\x1d"; // legacy terminals send GS for Ctrl+]
+
+describe("ask_user_question — collapse row (dock mode)", () => {
+	it("collapses to a one-line hint naming the key, and expands back", async () => {
+		const tool = register();
+		const { custom } = driveCustom((c, done) => {
+			const full = c.render(100);
+			expect(full.length).toBeGreaterThan(3);
+			c.handleInput(CTRL_RBRACKET);
+			const collapsed = c.render(100);
+			expect(collapsed.length).toBe(1);
+			expect(collapsed[0]).toContain("Ctrl+]");
+			c.handleInput(CTRL_RBRACKET);
+			expect(c.render(100).length).toBe(full.length);
+			done({ answers: [], cancelled: true });
+		});
+		const ctx = { hasUI: true, ui: { custom } } as never;
+		await tool.execute?.("tc", threeOptionParams as never, undefined as never, undefined as never, ctx);
+	});
+
+	it("swallows ordinary keys while collapsed so no answer is committed by accident", async () => {
+		const tool = register();
+		let committed = false;
+		const { custom } = driveCustom((c, done) => {
+			c.handleInput(CTRL_RBRACKET); // collapse
+			c.handleInput(KEY.DOWN);
+			c.handleInput(KEY.SPACE);
+			expect(c.render(100).length).toBe(1);
+			c.handleInput(KEY.ESC); // cancel is always allowed
+			committed = true;
+			done({ answers: [], cancelled: true });
+		});
+		const ctx = { hasUI: true, ui: { custom } } as never;
+		const r = (await tool.execute?.("tc", threeOptionParams as never, undefined as never, undefined as never, ctx)) as
+			| ToolResult
+			| undefined;
+		expect(committed).toBe(true);
+		expect(r?.details.cancelled).toBe(true);
+		expect(r?.details.answers).toHaveLength(0);
+	});
+});
+
 describe("ask_user_question — single-question navigation", () => {
 	it("DOWN to Beta, Enter → selects Beta (kind:'option')", async () => {
 		const tool = register();
@@ -314,7 +356,7 @@ describe("ask_user_question — 'Type something.' free-text flow", () => {
 });
 
 describe("ask_user_question — tab-switch height stability", () => {
-	it("dialog total line count is identical across tab switches (mixed single+multi fixture)", async () => {
+	it("each tab renders at its own height — no cross-tab equalization (mixed single+multi)", async () => {
 		const tool = register();
 		let lengthTab0 = 0;
 		let lengthTab1 = 0;
@@ -326,7 +368,9 @@ describe("ask_user_question — tab-switch height stability", () => {
 		});
 		const ctx = { hasUI: true, ui: { custom } } as never;
 		await tool.execute?.("tc", mixedParams as never, undefined as never, undefined as never, ctx);
-		expect(lengthTab0).toBe(lengthTab1);
+		// The dialog is a dock region: the multi tab's extra rows come out of the short
+		// tab's own height, never by padding the short one up to match (2026-10-03).
+		expect(lengthTab1).toBeGreaterThan(lengthTab0);
 	});
 });
 

@@ -148,7 +148,6 @@ export class DialogView implements StatefulView<DialogProps> {
 	private readonly config: DialogConfig;
 	private readonly questionStrategy: TabContentStrategy;
 	private readonly submitStrategy: TabContentStrategy | undefined;
-	private readonly maxFooterRowCount: number;
 
 	constructor(config: DialogConfig, initialProps: DialogProps) {
 		this.config = config;
@@ -171,7 +170,6 @@ export class DialogView implements StatefulView<DialogProps> {
 					notesInput: config.notesInput,
 				})
 			: undefined;
-		this.maxFooterRowCount = Math.max(this.questionStrategy.footerRowCount, this.submitStrategy?.footerRowCount ?? 0);
 	}
 
 	setProps(props: DialogProps): void {
@@ -203,14 +201,11 @@ export class DialogView implements StatefulView<DialogProps> {
 		const bottomFixed = 1 + strategy.footerRowCount;
 		const middleRows = natural.length - topFixed - bottomFixed;
 
-		// Residual spacer: equalizes total height across tabs (only needed when no overflow).
-		const spacerRows = Math.max(
-			0,
-			this.config.getBodyHeight(width) +
-				this.maxFooterRowCount -
-				strategy.bodyHeight(width, state) -
-				strategy.footerRowCount,
-		);
+		// No cross-tab height equalization. The dialog lives in the dock (the editor's
+		// own layout region), so every padded row is a row the transcript loses — padding
+		// a short tab up to the tallest one wasted ~10 blank rows on a 3-question set
+		// (2026-10-03 user report). Each tab renders at its own height.
+		const spacerRows = 0;
 
 		const termRows = this.config.getTerminalRows();
 

@@ -133,28 +133,31 @@ function makeDialog(parts: DialogParts): DialogView {
 }
 
 describe("Dialog overflow — no clipping when terminal is tall enough", () => {
-	it("returns full output including residual spacer when terminal is very tall", () => {
+	it("returns full output with no residual spacer when terminal is very tall", () => {
 		const dlg = makeDialog(
 			makeConfig({ getTerminalRows: () => 50, getBodyHeight: () => 6, getCurrentBodyHeight: () => 1 }),
 		);
 		const lines = dlg.render(80);
-		// With termRows=50, dialog fits easily. Residual spacer rows should be present.
+		// Fits easily and the dialog is a dock region: no rows are padded in to match the
+		// tallest tab (2026-10-03), so nothing trails the hint row but the border.
 		const hintIdx = lines.findIndex((l) => l.includes(HINT_PART_ENTER));
 		expect(hintIdx).toBeGreaterThan(0);
 		const tail = lines.slice(hintIdx + 1);
-		// Residual spacer = (6 + 5) - (1 + 2) = 8 rows  (footerRowCount dropped 4→2)
-		expect(tail.length).toBe(8);
-		expect(tail.every((l) => l.trim() === "")).toBe(true);
+		expect(tail.filter((l) => l.trim() === "").length).toBe(0);
 	});
 
 	it("preserves exact same output as current code when no overflow", () => {
-		const dlg = makeDialog(
-			makeConfig({ getTerminalRows: () => 100, getBodyHeight: () => 5, getCurrentBodyHeight: () => 1 }),
-		);
-		const lines = dlg.render(80);
-		// Residual spacer = (5 + 5) - (1 + 2) = 7 rows of trailing blanks  (footerRowCount 4→2)
-		const emptyTail = lines.filter((l) => l.trim() === "").length;
-		expect(emptyTail).toBeGreaterThanOrEqual(7);
+		const at = (globalBodyHeight: number) =>
+			makeDialog(
+				makeConfig({
+					getTerminalRows: () => 100,
+					getBodyHeight: () => globalBodyHeight,
+					getCurrentBodyHeight: () => 1,
+				}),
+			).render(80).length;
+		// The remaining blank rows are structural chrome (spacers, tab-bar gap), not
+		// padding: the dialog height is independent of the tallest tab's body height.
+		expect(at(5)).toBe(at(40));
 	});
 });
 
