@@ -1,7 +1,9 @@
 // Dependency-free smoke test: execute the actual renderer bodies, not a duplicate.
-import { readFileSync } from "node:fs";
+
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import vm from "node:vm";
+
 const source = readFileSync(
 	new URL("../packages/rpiv-ask-user-question/ask-user-question.ts", import.meta.url),
 	"utf8",
@@ -34,7 +36,13 @@ assert.equal(
 	}),
 	"<accent>Q1: One</accent>\nA1: Alpha\n\n<accent>Q2: Two</accent>\nA2: 1. Beta\n    2. Custom answer\n\n<accent>Q3: Three</accent>\nA3: Gamma",
 );
-assert.equal(result({ answers: [{ question: "One", answer: "Alpha" }] }), "<accent>Q: One</accent>\nA: Alpha");
+// Single-question: renderCall already printed the Q: line — the result block
+// must carry only the answer, otherwise the question appears twice.
+assert.equal(result({ answers: [{ question: "One", answer: "Alpha" }] }), "A: Alpha");
+assert.equal(
+	result({ answers: [{ question: "One", kind: "multi", selected: ["Beta", "Custom answer"] }] }),
+	"A: 1. Beta\n   2. Custom answer",
+);
 assert.equal(result({ cancelled: true }), "<muted>✗ 已取消</muted>");
 assert.equal(result(undefined), "<muted>✗ 已取消</muted>");
 console.log("Question renderer smoke tests passed (highlight, ordering, multi-select, single, cancellation).");

@@ -323,19 +323,20 @@ export function registerAskUserQuestionTool(pi: ExtensionAPI): void {
 			const details = result.details as QuestionnaireResult | undefined;
 			if (!details || details.cancelled || !details.answers?.length)
 				return new Text(_theme.fg("muted", "✗ 已取消"), 0, 0);
-			// Interleaved pairs: Q1 then A1 right under it, Q2/A2, … — question and
-			// answer stay adjacent; blank line between pairs keeps them scannable.
+			// Multi-question: interleaved Qn/An pairs — the call marker renders
+			// nothing there, so each question must sit right above its answer.
+			// Single-question: renderCall already printed the Q: line; repeating the
+			// question here doubled it in the transcript, so answers only.
 			const numbered = details.answers.length > 1;
 			const blocks = details.answers.map((a, i) => {
-				const qPrefix = numbered ? `Q${i + 1}: ` : "Q: ";
 				const aPrefix = numbered ? `A${i + 1}: ` : "A: ";
 				const pad = " ".repeat(aPrefix.length);
-				const qLine = _theme.fg("accent", `${qPrefix}${a.question ?? ""}`);
+				const qLine = numbered ? `${_theme.fg("accent", `Q${i + 1}: ${a.question ?? ""}`)}\n` : "";
 				if (a.kind === "multi" && a.selected?.length) {
 					const items = a.selected.map((s, k) => `${k + 1}. ${s}`);
-					return `${qLine}\n${aPrefix}${items.join(`\n${pad}`)}`;
+					return `${qLine}${aPrefix}${items.join(`\n${pad}`)}`;
 				}
-				return `${qLine}\n${aPrefix}${a.answer ?? ""}`;
+				return `${qLine}${aPrefix}${a.answer ?? ""}`;
 			});
 			return new Text(blocks.join("\n\n"), 0, 0);
 		},
