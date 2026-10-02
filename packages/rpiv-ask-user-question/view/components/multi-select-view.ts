@@ -152,9 +152,10 @@ export class MultiSelectView implements StatefulView<MultiSelectViewProps> {
 	private renderOtherRow(contentWidth: number, numberWidth: number): string[] {
 		const other = this.props.other;
 		const pointer = other.active ? this.theme.fg("accent", ACTIVE_POINTER) : INACTIVE_POINTER;
-		const box = this.theme.fg("muted", UNCHECKED);
+		// No checkbox for "Type something." row — it's an input row, not a checkable option
+		const noBox = " ".repeat(visibleWidth(UNCHECKED));
 		const number = String(this.question.options.length + 1).padStart(numberWidth, " ");
-		const rowPrefix = `${pointer}${number}${NUMBER_SEPARATOR}${box}${BOX_LABEL_GAP}`;
+		const rowPrefix = `${pointer}${number}${NUMBER_SEPARATOR}${noBox}${BOX_LABEL_GAP}`;
 		const continuationPrefix = " ".repeat(visibleWidth(rowPrefix));
 		const selectedText = (text: string) => this.theme.fg("accent", this.theme.bold(text));
 
