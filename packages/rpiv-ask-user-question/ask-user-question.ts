@@ -1,5 +1,5 @@
 import type { ExtensionAPI, ExtensionContext, Theme } from "@earendil-works/pi-coding-agent";
-import { isKeyRelease, isKeyRepeat, matchesKey, type OverlayHandle, type TUI } from "@earendil-works/pi-tui";
+import { isKeyRelease, isKeyRepeat, matchesKey, Text, type OverlayHandle, type TUI } from "@earendil-works/pi-tui";
 import {
 	COLLAPSE_KEY_OFF,
 	formatKeySpecForDisplay,
@@ -309,6 +309,35 @@ export function registerAskUserQuestionTool(pi: ExtensionAPI): void {
 		promptSnippet: guidance.promptSnippet ?? DEFAULT_PROMPT_SNIPPET,
 		promptGuidelines: guidance.promptGuidelines ?? DEFAULT_PROMPT_GUIDELINES,
 		parameters: QuestionParamsSchema,
+
+		renderCall(args, _theme, _context) {
+			const questions = (args as QuestionParams).questions ?? [];
+			if (questions.length === 1) return new Text(_theme.fg("accent", `Q: ${questions[0].question}`), 0, 0);
+			// Multi-question: render nothing here — the result block below carries
+			// the interleaved Q/A pairs, and the open dialog already shows every
+			// question while it waits. Empty Text renders zero lines (no marker).
+			return new Text("", 0, 0);
+		},
+
+		renderResult(result, _options, _theme, _context) {
+			const details = result.details as QuestionnaireResult | undefined;
+			if (!details || details.cancelled || !details.answers?.length) return new Text(_theme.fg("muted", "✗ 已取消"), 0, 0);
+			// Interleaved pairs: Q1 then A1 right under it, Q2/A2, … — question and
+			// answer stay adjacent; blank line between pairs keeps them scannable.
+			const numbered = details.answers.length > 1;
+			const blocks = details.answers.map((a, i) => {
+				const qPrefix = numbered ? `Q${i + 1}: ` : "Q: ";
+				const aPrefix = numbered ? `A${i + 1}: ` : "A: ";
+				const pad = " ".repeat(aPrefix.length);
+				const qLine = _theme.fg("accent", `${qPrefix}${a.question ?? ""}`);
+				if (a.kind === "multi" && a.selected?.length) {
+					const items = a.selected.map((s, k) => `${k + 1}. ${s}`);
+					return `${qLine}\n${aPrefix}${items.join(`\n${pad}`)}`;
+				}
+				return `${qLine}\n${aPrefix}${a.answer ?? ""}`;
+			});
+			return new Text(blocks.join("\n\n"), 0, 0);
+		},
 
 		async execute(_toolCallId, params, _signal, _onUpdate, ctx) {
 			// Line-terminator normalization runs once here, ahead of validation, so
