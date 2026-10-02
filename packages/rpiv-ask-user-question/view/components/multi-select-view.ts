@@ -7,7 +7,7 @@ import { renderInlineInputRow } from "./inline-input.js";
 
 const ACTIVE_POINTER = "❯ ";
 const INACTIVE_POINTER = "  ";
-const CHECKED = "[✔]";
+const CHECKED = "[✓]";
 const UNCHECKED = "[ ]";
 const NUMBER_SEPARATOR = ". ";
 const BOX_LABEL_GAP = " ";
@@ -151,13 +151,19 @@ export class MultiSelectView implements StatefulView<MultiSelectViewProps> {
 
 	private renderOtherRow(contentWidth: number, numberWidth: number): string[] {
 		const other = this.props.other;
+		// Focus shows on the pointer only; the typed text itself stays in the default
+		// text color (2026-10-02 user call: accent-blue input text reads wrong). The
+		// pointer is pre-styled INSIDE the prefix — its closing SGR lands in unstyled
+		// content, so no accent reset can leak into the buffer text.
 		const pointer = other.active ? this.theme.fg("accent", ACTIVE_POINTER) : INACTIVE_POINTER;
-		// No checkbox for "Type something." row — it's an input row, not a checkable option
-		const noBox = " ".repeat(visibleWidth(UNCHECKED));
 		const number = String(this.question.options.length + 1).padStart(numberWidth, " ");
-		const rowPrefix = `${pointer}${number}${NUMBER_SEPARATOR}${noBox}${BOX_LABEL_GAP}`;
+		const rowPrefix = `${pointer}${number}${NUMBER_SEPARATOR}`;
 		const continuationPrefix = " ".repeat(visibleWidth(rowPrefix));
-		const selectedText = (text: string) => this.theme.fg("accent", this.theme.bold(text));
+		// Reclaim the checkbox column the option rows still pay for.
+		const otherContentWidth = Math.max(1, contentWidth + visibleWidth(`${UNCHECKED}${BOX_LABEL_GAP}`));
+		// Plain pass-through (single-select passes theme.selectedText; multi-select's
+		// custom row renders its input in the default text color).
+		const plainText = (text: string) => text;
 
 		if (other.active && other.inputMode) {
 			return renderInlineInputRow({
@@ -165,14 +171,13 @@ export class MultiSelectView implements StatefulView<MultiSelectViewProps> {
 				cursorOffset: other.inputCursorOffset,
 				rowPrefix,
 				continuationPrefix,
-				contentWidth,
-				selectedText,
+				contentWidth: otherContentWidth,
+				selectedText: plainText,
 			});
 		}
 
-		return wrapTextWithAnsi(other.inputBuffer || displayLabel("other"), contentWidth).map((segment, index) => {
-			const line = `${index === 0 ? rowPrefix : continuationPrefix}${segment}`;
-			return other.active ? selectedText(line) : line;
+		return wrapTextWithAnsi(other.inputBuffer || displayLabel("other"), otherContentWidth).map((segment, index) => {
+			return `${index === 0 ? rowPrefix : continuationPrefix}${segment}`;
 		});
 	}
 

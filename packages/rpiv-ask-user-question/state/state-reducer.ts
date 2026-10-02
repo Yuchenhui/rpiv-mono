@@ -70,6 +70,11 @@ function persistMultiSelectAnswer(state: QuestionnaireState, ctx: ApplyContext):
 	for (let i = 0; i < q.options.length; i++) {
 		if (state.multiSelectChecked.has(i)) selected.push(q.options[i]!.label);
 	}
+	// Preserve a committed custom text across checkbox toggles: it lives in `selected`
+	// (no option-label match), and a rebuild from checkboxes alone would silently drop it.
+	const labels = new Set(q.options.map((o) => o.label));
+	const preserved = (state.answers.get(state.currentTab)?.selected ?? []).filter((s) => !labels.has(s));
+	selected.push(...preserved);
 	const out = new Map(state.answers);
 	if (selected.length === 0) {
 		out.delete(state.currentTab);
@@ -96,11 +101,20 @@ function notesValueFor(state: QuestionnaireState, tab: number): string {
 	return state.notesByTab.get(tab) ?? state.answers.get(tab)?.notes ?? "";
 }
 
-function customDraftValueFor(state: QuestionnaireState, tab: number): string {
+function customDraftValueFor(state: QuestionnaireState, tab: number, ctx: ApplyContext): string {
 	const draft = state.customDraftsByTab.get(tab);
 	if (draft !== undefined) return draft;
 	const answer = state.answers.get(tab);
-	return answer?.kind === "custom" && typeof answer.answer === "string" ? answer.answer : "";
+	if (answer?.kind === "custom" && typeof answer.answer === "string") return answer.answer;
+	// Multi-select commits merge the custom text into `selected` (appended last). Recover
+	// it on tab revisit so the "Type something." row rehydrates instead of falling back to
+	// the placeholder — anything not matching an option label came from the keyboard.
+	if (answer?.kind === "multi" && answer.selected?.length) {
+		const labels = new Set(ctx.questions[tab]?.options.map((o) => o.label) ?? []);
+		const custom = answer.selected.filter((s) => !labels.has(s));
+		return custom[custom.length - 1] ?? "";
+	}
+	return "";
 }
 
 function setCustomDraft(state: QuestionnaireState, tab: number, value: string): ReadonlyMap<number, string> {
@@ -133,7 +147,7 @@ function switchTabResult(state: QuestionnaireState, nextTab: number, ctx: ApplyC
 		effects: [
 			{ kind: "set_notes_focused", focused: false },
 			{ kind: "set_notes_value", value: notesValue },
-			{ kind: "set_input_buffer", value: customDraftValueFor(state, nextTab) },
+			{ kind: "set_input_buffer", value: customDraftValueFor(state, nextTab, ctx) },
 		],
 	};
 }
@@ -174,7 +188,7 @@ const navHandler: Handler<"nav"> = (state, action, ctx) => {
 	if (!inputMode) return { state: next, effects: [] };
 	return {
 		state: next,
-		effects: [{ kind: "set_input_buffer", value: customDraftValueFor(next, state.currentTab) }],
+		effects: [{ kind: "set_input_buffer", value: customDraftValueFor(next, state.currentTab, ctx) }],
 	};
 };
 

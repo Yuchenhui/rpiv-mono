@@ -339,7 +339,7 @@ describe("makeDialog — multi-question (question tab)", () => {
 		expect(hidden.join("\n")).not.toContain("<NOTES_INPUT>");
 	});
 
-	it("renders multiSelect checkboxes inline ([✔] / [ ]) in place of PreviewPane", () => {
+	it("renders multiSelect checkboxes inline ([✓] / [ ]) in place of PreviewPane", () => {
 		const multiQ: QuestionData = {
 			question: "areas?",
 			header: "Areas",
@@ -383,7 +383,7 @@ describe("makeDialog — multi-question (question tab)", () => {
 			}),
 		);
 		const joined = dlg.render(80).join("\n");
-		expect(joined).toContain("[✔]");
+		expect(joined).toContain("[✓]");
 		expect(joined).toContain("[ ]");
 		expect(joined).not.toContain("<PREVIEW>");
 	});

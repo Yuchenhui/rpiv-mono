@@ -45,7 +45,7 @@ export class WrappingSelect implements Component {
 	private static readonly ACTIVE_POINTER = "❯ ";
 	private static readonly INACTIVE_POINTER = "  ";
 	private static readonly NUMBER_SEPARATOR = ". ";
-	private static readonly CONFIRMED_MARK = " ✔";
+	private static readonly CONFIRMED_MARK = " ✓";
 	private static readonly MIN_CONTENT_WIDTH = 1;
 
 	private readonly items: readonly WrappingSelectItem[];
