@@ -195,7 +195,7 @@ describe("ask_user_question.execute — RPC dialog walker (ctx.mode === 'rpc')",
 		const r = await run(tool, MULTI, ctxRpc({ input }));
 		expect(input).toHaveBeenCalledOnce();
 		expect(r?.details).toMatchObject({ cancelled: false });
-		expect(r?.content[0]).toMatchObject({ text: expect.stringContaining('"Pick colors?"="red, blue"') });
+		expect(r?.content[0]).toMatchObject({ text: expect.stringContaining('"Pick colors?"="1. red; 2. blue"') });
 	});
 
 	it("multi-select treats non-index input as a typed custom answer, not a silent drop", async () => {
@@ -233,7 +233,7 @@ describe("ask_user_question.execute — RPC dialog walker (ctx.mode === 'rpc')",
 		expect(select).toHaveBeenCalledOnce();
 		expect(input).toHaveBeenCalledOnce();
 		expect(r?.content[0]).toMatchObject({ text: expect.stringContaining('"Which?"="A"') });
-		expect(r?.content[0]).toMatchObject({ text: expect.stringContaining('"Pick colors?"="green"') });
+		expect(r?.content[0]).toMatchObject({ text: expect.stringContaining('"Pick colors?"="1. green"') });
 	});
 });
 

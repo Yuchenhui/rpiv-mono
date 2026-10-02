@@ -246,7 +246,7 @@ describe("buildQuestionnaireResponse — completed", () => {
 			answers: [{ questionIndex: 0, question: "Areas", kind: "multi", answer: null, selected: ["FE", "BE"] }],
 		};
 		const r = buildQuestionnaireResponse(result, params);
-		expect(r.content[0].text).toContain('"Areas"="FE, BE"');
+		expect(r.content[0].text).toContain('"Areas"="1. FE; 2. BE"');
 	});
 
 	it("custom typed answer renders raw text (no 'User answered:' prefix)", () => {
@@ -335,7 +335,7 @@ describe("buildQuestionnaireResponse — completed", () => {
 			],
 		};
 		const r = buildQuestionnaireResponse(result, params);
-		expect(r.content[0].text).toContain('"Areas"="FE, BE"');
+		expect(r.content[0].text).toContain('"Areas"="1. FE; 2. BE"');
 		expect(r.content[0].text).toContain("user notes: both");
 		expect(r.content[0].text).not.toContain("selected preview:");
 		expect(r.details.answers[0].notes).toBe("both");
@@ -464,7 +464,7 @@ describe("buildQuestionnaireResponse — multi-question mixed types", () => {
 		const r = buildQuestionnaireResponse(result, params);
 		const text = r.content[0].text;
 		expect(text).toContain('"Framework?"="React"');
-		expect(text).toContain('"Areas?"="FE, BE"');
+		expect(text).toContain('"Areas?"="1. FE; 2. BE"');
 		expect(text.split("\n").length).toBe(1);
 	});
 

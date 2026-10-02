@@ -1,5 +1,5 @@
 import type { ExtensionAPI, ExtensionContext, Theme } from "@earendil-works/pi-coding-agent";
-import { isKeyRelease, isKeyRepeat, matchesKey, Text, type OverlayHandle, type TUI } from "@earendil-works/pi-tui";
+import { isKeyRelease, isKeyRepeat, matchesKey, type OverlayHandle, Text, type TUI } from "@earendil-works/pi-tui";
 import {
 	COLLAPSE_KEY_OFF,
 	formatKeySpecForDisplay,
@@ -321,7 +321,8 @@ export function registerAskUserQuestionTool(pi: ExtensionAPI): void {
 
 		renderResult(result, _options, _theme, _context) {
 			const details = result.details as QuestionnaireResult | undefined;
-			if (!details || details.cancelled || !details.answers?.length) return new Text(_theme.fg("muted", "✗ 已取消"), 0, 0);
+			if (!details || details.cancelled || !details.answers?.length)
+				return new Text(_theme.fg("muted", "✗ 已取消"), 0, 0);
 			// Interleaved pairs: Q1 then A1 right under it, Q2/A2, … — question and
 			// answer stay adjacent; blank line between pairs keeps them scannable.
 			const numbered = details.answers.length > 1;

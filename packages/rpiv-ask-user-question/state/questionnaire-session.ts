@@ -167,7 +167,8 @@ export class QuestionnaireSession {
 	 * See https://github.com/juicesharp/rpiv-mono/issues/253
 	 */
 	private forwardScrollInput(data: string): boolean {
-		const tui = this.tui as Record<string, unknown>;
+		// SAFETY: optional host scrollBy is runtime-checked below before invocation.
+		const tui = this.tui as unknown as Record<string, unknown>;
 		if (typeof tui.scrollBy !== "function") return false;
 
 		// SGR wheel: \x1b[<64;x;yM (up) / \x1b[<65;x;yM (down)
@@ -180,8 +181,14 @@ export class QuestionnaireSession {
 		// PageUp / PageDown — but NOT when inline editor is active (they move cursor there)
 		if (!this.state.inputMode) {
 			const pageSize = 20; // reasonable default; exact viewport height not exposed via TUI interface
-			if (data === "\x1b[5~") { (tui.scrollBy as (n: number) => void)(-pageSize); return true; }
-			if (data === "\x1b[6~") { (tui.scrollBy as (n: number) => void)(pageSize); return true; }
+			if (data === "\x1b[5~") {
+				(tui.scrollBy as (n: number) => void)(-pageSize);
+				return true;
+			}
+			if (data === "\x1b[6~") {
+				(tui.scrollBy as (n: number) => void)(pageSize);
+				return true;
+			}
 		}
 
 		return false;

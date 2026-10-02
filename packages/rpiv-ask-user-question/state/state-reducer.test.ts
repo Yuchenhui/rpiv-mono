@@ -389,7 +389,7 @@ describe("reduce — submit_nav / ignore", () => {
 	});
 });
 
-describe("confirmHandler — custom answer clears multiSelectChecked (mutual exclusivity)", () => {
+describe("confirmHandler — custom answer merges checked options", () => {
 	const multiQ: QuestionData = {
 		question: "areas?",
 		header: "H",
@@ -412,7 +412,7 @@ describe("confirmHandler — custom answer clears multiSelectChecked (mutual exc
 			ctx,
 		);
 		expect(result.state.multiSelectChecked.size).toBe(0);
-		expect(result.state.answers.get(0)?.kind).toBe("custom");
+		expect(result.state.answers.get(0)).toMatchObject({ kind: "multi", selected: ["FE", "BE", "custom-text"] });
 	});
 
 	it("option confirm on a single-select tab leaves multiSelectChecked untouched (no spurious clear)", () => {

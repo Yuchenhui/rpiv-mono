@@ -432,7 +432,7 @@ describe("makeDialog — Submit tab", () => {
 		expect(joined).toContain("→");
 		expect(joined).toContain("A");
 		expect(joined).toContain("● H2");
-		expect(joined).toContain("X, Y");
+		expect(joined).toContain("1. X; 2. Y");
 	});
 
 	it("omits unanswered rows from summary (no ✖)", () => {

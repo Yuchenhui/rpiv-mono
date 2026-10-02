@@ -208,8 +208,8 @@ const confirmHandler: Handler<"confirm"> = (state, action, ctx) => {
 	}
 	// Merge custom free-text with checked options on multi-select tabs:
 	// instead of replacing the selections, append the custom text to them.
-	const wasCustom = answer.kind === "custom";
-	const isCustomMulti = wasCustom && ctx.questions[answer.questionIndex]?.multiSelect === true;
+	const customAnswer = answer.kind === "custom";
+	const isCustomMulti = customAnswer && ctx.questions[answer.questionIndex]?.multiSelect === true;
 	if (isCustomMulti && state.multiSelectChecked.size > 0) {
 		const q = ctx.questions[answer.questionIndex];
 		const selected: string[] = [];
@@ -223,8 +223,7 @@ const confirmHandler: Handler<"confirm"> = (state, action, ctx) => {
 	}
 	const answers = new Map(state.answers);
 	answers.set(answer.questionIndex, answer);
-	const customDraftsByTab =
-		wasCustom ? withoutCustomDraft(state, answer.questionIndex) : state.customDraftsByTab;
+	const customDraftsByTab = customAnswer ? withoutCustomDraft(state, answer.questionIndex) : state.customDraftsByTab;
 	const next: QuestionnaireState = {
 		...state,
 		answers,
@@ -232,12 +231,6 @@ const confirmHandler: Handler<"confirm"> = (state, action, ctx) => {
 		...(isCustomMulti ? { multiSelectChecked: new Set<number>() } : {}),
 	};
 	if (action.autoAdvanceTab !== undefined) return switchTabResult(next, action.autoAdvanceTab, ctx);
-	// Single-question custom answer: navigate to Submit instead of finishing,
-	// so the user can review the answer before committing.
-	if (wasCustom && ctx.itemsByTab.length === 1 && answer.answer) {
-		const submitIndex = ctx.itemsByTab[0].length - 1;
-		return { state: { ...next, optionIndex: submitIndex, inputMode: false }, effects: [] };
-	}
 	return doneFor(next, ctx, false);
 };
 

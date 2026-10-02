@@ -351,13 +351,14 @@ describe("MultiSelectView — 'Type something.' row", () => {
 			inputBuffer: buffer,
 		});
 
-	it("renders the other row after options, numbered N+1, box always [ ] muted", () => {
+	it("renders the custom-input row numbered N+1 without a checkbox", () => {
 		const q = question();
 		const m = makeView(q, otherInactive(q));
 		const lines = m.render(80);
 		// 3 options → other is row index 3, numbered "4.".
 		const raw = lines[3].replace(/\x1b\[[0-9;]*m/g, "");
-		expect(raw).toMatch(/^ {2}4\. \[ \] Type something\./);
+		expect(raw).toMatch(/^ {2}4\. +Type something\./);
+		expect(raw).not.toContain("[ ]");
 		expect(lines[3]).not.toContain("[✔]");
 	});
 
@@ -453,7 +454,8 @@ describe("MultiSelectView — 'Type something.' row", () => {
 		const m = makeView(q, makeProps(q));
 		const lines = m.render(80);
 		const raw = lines[9].replace(/\x1b\[[0-9;]*m/g, ""); // other row
-		expect(raw).toMatch(/10\. \[ \] Type something\./);
+		expect(raw).toMatch(/10\. +Type something\./);
+		expect(raw).not.toContain("[ ]");
 	});
 });
 
