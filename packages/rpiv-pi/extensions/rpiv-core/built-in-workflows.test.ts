@@ -2863,12 +2863,12 @@ describe("build slice-check (deterministic floor)", () => {
 		// Drop c2 from every slice's covers — the frozen first cut still claims it.
 		writeFileSync(
 			join(tmpDir, rel),
-			map({
+			`${map({
 				count: 2,
 				coverage: COV,
 				sliceLines:
 					"  - { n: 1, title: A, deps: [], covers: [c1] }\n  - { n: 2, title: B, deps: [1], covers: [c1] }\n",
-			}) + "**Draws on:** src/seed.ts:20\n",
+			})}**Draws on:** src/seed.ts:20\n`,
 		);
 		const data = structureRun()({
 			cwd: tmpDir,
@@ -4195,9 +4195,7 @@ describe("converging-loop replay pinning (local halts + external tuples + carry-
 				meta: {},
 				data: { phase_count: 8 },
 			}) as unknown as Output;
-		const round1 = PLAN_DIMENSIONS.map((d) =>
-			verdict(d, d === "completeness" || d === "correctness" ? false : true, PLAN),
-		);
+		const round1 = PLAN_DIMENSIONS.map((d) => verdict(d, !(d === "completeness" || d === "correctness"), PLAN));
 		const state1: Record<string, Output[]> = { plans: [plan(PLAN)], "code-verdicts": round1 };
 		const first = countBlocking(state1, CODE_LANE);
 		expect(first).toBe(2);
@@ -6826,7 +6824,7 @@ describe("build grade panel re-grades only the pending dimensions (P2)", () => {
 		// attribute to the enclosing phase.
 		const verdicts = [...passingOthers(), correctnessFailing("Phase 3 > packages/x/CHANGELOG.md")];
 		const fenced = (entry: string) =>
-			"intro line\n```markdown\n## [Unreleased]\n\n### Added\n\n- " + entry + "\n```\ntail line";
+			`intro line\n\`\`\`markdown\n## [Unreleased]\n\n### Added\n\n- ${entry}\n\`\`\`\ntail line`;
 		const prior = planFrom([phase(3, fenced("old changelog entry")), phase(5, "shared phase 5 content")]);
 		const current = planFrom([phase(3, fenced("NEW changelog entry")), phase(5, "shared phase 5 content")]);
 		expect(await labelsWithPrior(verdicts, prior, current)).toEqual(["correctness"]);
