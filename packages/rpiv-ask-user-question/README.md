@@ -19,6 +19,51 @@ pi install npm:@juicesharp/rpiv-ask-user-question
 
 Restart your Pi session.
 
+## Yuchenhui fork release policy
+
+The Windows-only pinned fork is distributed as a self-contained GitHub Release
+asset, **not** an npm publication or a Git install of this monorepo (Pi's Git
+installer does not select a package subdirectory). Upstream attribution, MIT
+licenses and the `@juicesharp` namespace are retained. The original baseline is
+`5ee7845672f491b331e9b551a77a4a0fc9f79d89`; source/workspace manifests remain
+`2.12.0` to preserve sibling peer compatibility. `2.12.0-yuchenhui.1` is an
+**artifact-only overlay**, not the version of the source package.
+
+From a committed checkout, with Node.js 22+, npm, Git and `tar` on PATH:
+
+```sh
+node scripts/pack-ask-user-question.mjs --source <recipe-and-documentation-commit-SHA> --version 2.12.0-yuchenhui.1 --out <absolute-directory-outside-checkout>
+```
+
+The recipe resolves the ref to its actual committed SHA, archives only ask,
+config and the root license, and retains temporary staging for inspection; it
+never uses working-tree edits or installed dependencies. Output is the tarball,
+`SHA256SUMS` and `fork-release.json` with source/overlay manifests, provenance,
+file counts and validation boundaries. Existing outputs are not overwritten.
+An uncommitted-HEAD run is only a precommit preview: final provenance must name
+the commit containing this recipe and documentation, not just the baseline.
+The future immutable tag is `rpiv-ask-user-question-v2.12.0-yuchenhui.1` in
+[`Yuchenhui/rpiv-mono`](https://github.com/Yuchenhui/rpiv-mono).
+
+The private artifact redirects repository/homepage/bugs to the fork and bundles
+real `@juicesharp/rpiv-config@2.12.0` files with MIT licensing. SDK and typebox
+remain `*` host peers; optional i18n is not bundled (English fallback is the
+baseline). Only `index.ts` is registered as a Pi extension. No workspace links,
+SDK copies, tests, lifecycle scripts or publish configuration are shipped.
+Packing uses `npm pack --ignore-scripts --workspaces=false --offline --json`
+with an external destination and isolated empty npm configuration. The recipe
+checks the bundle, actual tar members, extracted byte contents and exports.
+This is reproducible source selection and file output, not a promise of
+byte-identical archive timestamps or Linux deployment support.
+
+Release upload/tag push, SHA verification, isolated offline factory loading and
+Windows pinned installation are separate parent-reviewed steps. Neither this
+recipe nor its static/archive validation runs regression suites, real models,
+native CLI, extension events, installation, deployment or restart. Keep the
+previous pinned artifact as the rollback source; cleanup requires separate
+approval. After an authorized package-source change, fully exit and restart Pi,
+then verify the installed source and runtime separately.
+
 ## Quick start
 
 Nothing to set up — the tool is live as soon as Pi restarts. Hand the model a task with a real decision buried in it:
