@@ -106,8 +106,9 @@ try {
   const repo = realpathSync(run('git', ['rev-parse', '--show-toplevel'], recipeDirectory).trim());
   const sourceSha = run('git', ['rev-parse', '--verify', '--end-of-options', `${options['--source']}^{commit}`], repo).trim();
   assert(/^[a-f0-9]{40}$/.test(sourceSha), 'Expected exact SHA-1 commit');
-  const upstreamBase = '5ee7845672f491b331e9b551a77a4a0fc9f79d89';
-  run('git', ['merge-base', '--is-ancestor', upstreamBase, sourceSha], repo);
+  const sourceBaseline = '5ee7845672f491b331e9b551a77a4a0fc9f79d89';
+  const upstreamBase = '68d9a0014b70006d7b04b57933752338a2716db7';
+  run('git', ['merge-base', '--is-ancestor', sourceBaseline, sourceSha], repo);
   // Resolve an existing ancestor before mkdir, so symlinks cannot bypass containment.
   const requestedOut = path.resolve(options['--out']);
   let ancestor = requestedOut;
@@ -139,7 +140,7 @@ try {
   manifest.version = version;
   manifest.private = true;
   manifest.repository = { ...manifest.repository, url: 'git+https://github.com/Yuchenhui/rpiv-mono.git' };
-  manifest.homepage = 'https://github.com/Yuchenhui/rpiv-mono/tree/main/packages/rpiv-ask-user-question#readme';
+  manifest.homepage = `https://github.com/Yuchenhui/rpiv-mono/tree/${sourceSha}/packages/rpiv-ask-user-question#readme`;
   manifest.bugs = { url: 'https://github.com/Yuchenhui/rpiv-mono/issues' };
   manifest.dependencies = { '@juicesharp/rpiv-config': '2.12.0' };
   manifest.bundleDependencies = ['@juicesharp/rpiv-config'];
@@ -202,7 +203,7 @@ try {
   writeFileSync(path.join(out, 'SHA256SUMS'), `${digest}  ${filename}\n`);
   saveJson(path.join(out, 'fork-release.json'), {
     repository: 'https://github.com/Yuchenhui/rpiv-mono', upstreamRepository: 'https://github.com/juicesharp/rpiv-mono',
-    upstreamBase, originalVersion: '2.12.0', forkVersion: version, sourceSha,
+    upstreamBase, sourceBaseline, originalVersion: '2.12.0', forkVersion: version, sourceSha,
     tag: `rpiv-ask-user-question-v${version}`, configSource: { sourceSha, directory: 'packages/rpiv-config', version: '2.12.0', license: 'MIT' },
     sourceManifest, artifactManifest: manifest,
     overlayPolicy: 'Source/workspace versions stay 2.12.0; fork version/private/URLs/exact bundled config are artifact-only. Scripts and publishConfig removed; SDK/typebox peers and optional i18n retained.',
