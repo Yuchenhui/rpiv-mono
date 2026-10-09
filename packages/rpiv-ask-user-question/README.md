@@ -21,6 +21,9 @@ Restart your Pi session.
 
 ## Yuchenhui fork release policy
 
+Long-term fork maintenance is on `main`; source selection still uses an exact
+commit and deployments retain versioned, SHA-256-verified artifacts.
+
 The Windows-only pinned fork is distributed as a self-contained GitHub Release
 asset, **not** an npm publication or a Git install of this monorepo (Pi's Git
 installer does not select a package subdirectory). Upstream attribution, MIT
